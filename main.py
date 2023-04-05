@@ -142,7 +142,7 @@ def scrapNow():
         cursor.execute("INSERT INTO InstaScraper (Name, From_Date, To_Date) VALUES (?, ?, ?)",
                        (name, from_date, to_date))
         conn.commit()
-        print(cursor.rowcount, "Scrap record inserted.\n")
+        print(color_yellow, cursor.rowcount, "Scrap record inserted.\n")
 
         # print the table data
         cursor.execute("SELECT * FROM InstaScraper")
@@ -150,6 +150,7 @@ def scrapNow():
         for row in cursor.fetchall():
             table.add_row(row)
         print(table)
+        print("\n", color_reset)
 
         # close the database connection
         conn.close()
@@ -184,11 +185,18 @@ def scrapHistory():
 
 
 def clearRecord():
-    scrapHistory()
-
     # connect to the database
     conn = sqlite3.connect('database.db')
     cursor = conn.cursor()
+
+    # print the table data
+    print(color_yellow + "\nPrevious Scrape History")
+    cursor.execute("SELECT * FROM InstaScraper")
+    table = PrettyTable(['Serial No', 'Name', 'From', 'To', 'Scraped At'])
+    for row in cursor.fetchall():
+        table.add_row(row)
+    print(table)
+    print("\n"+color_reset)
 
     # get user input for delete option
     delete_option = input(
@@ -199,19 +207,35 @@ def clearRecord():
         cursor = conn.cursor()
         cursor.execute("DELETE FROM InstaScraper")
         conn.commit()
+        cursor.execute("VACUUM")
+        conn.commit()
         print(color_lightred+"All records deleted successfully."+color_reset)
     else:
-        # split the user input into individual serial numbers
-        serial_numbers = delete_option.split(',')
+        try:
+            # split the user input into individual serial numbers
+            serial_numbers = delete_option.split(',')
 
-        # execute a DELETE statement to remove the records with the given serial numbers
-        cursor = conn.cursor()
-        for serial_number in serial_numbers:
-            cursor.execute(
-                "DELETE FROM InstaScraper WHERE SERIAL NO=?", (serial_number,))
-        conn.commit()
-        print(color_lightred +
-              f"{len(serial_numbers)} records deleted successfully."+color_reset)
+            # execute a DELETE statement to remove the records with the given serial numbers
+            cursor = conn.cursor()
+            for serial_number in serial_numbers:
+                cursor.execute(
+                    "DELETE FROM InstaScraper WHERE SERIAL NO=?", (serial_number,))
+            conn.commit()
+            print(color_lightred +
+                  f"{len(serial_numbers)} records deleted successfully."+color_reset)
+
+        except:
+            print(
+                color_red+"Incorrect serial number Input. Try again"+color_reset)
+
+    # print the updated table data
+    print(color_yellow + "\nUpdated Scrape History")
+    cursor.execute("SELECT * FROM InstaScraper")
+    table = PrettyTable(['Serial No', 'Name', 'From', 'To', 'Scraped At'])
+    for row in cursor.fetchall():
+        table.add_row(row)
+    print(table)
+    print("\n"+color_reset)
 
     # close the database connection
     conn.close()
